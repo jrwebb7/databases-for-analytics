@@ -23,12 +23,20 @@ The data represents **fictional patients**, not real medical records. It should 
 
 I selected three related files from the sample archive. Counts and headers below were measured locally with Python's `csv` module **before importing the files into MySQL**.
 
+**Original extracted files (screenshot from my Mac):**
+
+![Finder showing Synthea CSV files in the extracted folder](screenshots/source_csv_files.webp)
+
 | Source CSV | Data represented | Original data rows (excluding header) | Original columns |
 |---|---|---:|---:|
 | `patients.csv` | Patient demographics and lifetime financial figures | 1,171 | 25 |
 | `encounters.csv` | Visits, dates, encounter categories, and costs | 53,346 | 15 |
 | `conditions.csv` | Diagnoses and their patient/encounter links | 8,376 | 6 |
 | **Total** | | **62,893** | **46 source attributes across the three files** |
+
+**Python verification of the original CSV row and column counts:**
+
+![Terminal output verifying rows and columns across the three CSV files](screenshots/csv_row_column_counts.webp)
 
 This meets the assignment's minimum of three tables: one with at least 1,000 rows and two others with at least 100 rows. The completed database contains 47 columns because I added a generated primary key to `conditions`.
 
@@ -148,6 +156,10 @@ Key cleaning and type transformations:
 6. **End-of-line cleanup:** `TRIM(TRAILING '\r' FROM ...)` handled potential carriage-return characters in the last CSV column.
 7. **Synthetic IDs:** UUID identifiers were preserved in `VARCHAR(36)` columns, enabling joins and foreign keys.
 
+**Troubleshooting evidence:** The original Python inspection raised `KeyError: 'ID'`, which led me to inspect the actual `Id` header and correct the script.
+
+![Terminal showing the original Python KeyError caused by mismatched column capitalization](screenshots/python_header_error.webp)
+
 **Import warnings and investigation:** The `patients` import loaded all 1,171 records but reported **3,048 diagnostic messages**. I reproduced the load in a temporary table and inspected the first 15 with `SHOW WARNINGS LIMIT 15`; the displayed messages were code 1265 (`Data truncated`) for `LAT`, `LON`, and `HEALTHCARE_COVERAGE`. These are consistent with values carrying more decimal places than the selected destination columns. I kept the fixed-point types appropriate to the analysis. **Only the first 15 messages were inspected, so I do not claim that every one of the 3,048 messages has been independently verified.** The encounters and conditions imports reported zero warnings and zero skipped rows.
 
 The full recorded table-creation, import, and analysis commands are available in [`synthea_project_queries.sql`](./synthea_project_queries.sql). For reproducibility, the SQL file is designed for a **new empty database**, with file paths edited to match the local extraction folder.
@@ -168,6 +180,10 @@ SELECT * FROM conditions LIMIT 5;
 ```
 
 `SELECT *` demonstrates access to **every column** in each table, while `LIMIT 5` keeps the printed results readable.
+
+**Actual MySQL patient table structure (`DESCRIBE patients;`):**
+
+![MySQL Terminal screenshot showing DESCRIBE patients and 25 column data types](screenshots/patients_table_structure.webp)
 
 **Actual imported row counts** (verified in MySQL):
 
@@ -196,7 +212,7 @@ FROM patients;
 
 The missing death dates are stored as `NULL`, not the text string `"NULL"`. The geographic validation checks the ranges for non-NULL values; it is not a full source-to-destination cell-by-cell audit.
 
-**Evidence screenshots to add before submission:** Add authentic screenshots from your own MySQL session to an `exercises/screenshots/` folder showing `SHOW TABLES`/`DESCRIBE`, the three `SELECT *` results, and the analysis results. Include at least one real screenshot with the numbered Canvas submission. Do not replace these with generated screenshots.
+**Evidence note:** The four images above are cropped from my original screenshots and document source CSV files, row/column counts, a Python troubleshooting step, and a live MySQL `DESCRIBE patients` result. The `SELECT *`, JOIN, and aggregate query outputs are transcribed as verified tables in this report. A separate screenshot of a JOIN or aggregate result would further strengthen the Canvas submission.
 
 ## 7. SQL analysis: joins and aggregations
 
@@ -297,7 +313,8 @@ This project reinforced the importance of inspecting data **before** importing i
 - [x] Document table structures and the full data dictionary.
 - [x] Run `SELECT *` on each table, demonstrate a join, and run aggregate queries.
 - [x] Summarize challenges, solutions, and insights.
-- [ ] Add authentic MySQL screenshots to this public GitHub folder and embed or link them here.
+- [x] Include authentic screenshots from the data preparation and MySQL table-structure steps in this public GitHub report.
+- [ ] Optionally add a screenshot of a SQL JOIN or aggregate query result.
 - [ ] Confirm this report and screenshots load **without GitHub login** in a private/incognito browser window.
 - [ ] Paste the public GitHub file link and verification screenshot into the Canvas success questions.
 
